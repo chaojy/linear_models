@@ -144,3 +144,95 @@ broom::glance(fit)
 ``` r
 #model hasn't changed in fundamental way - just changed the reference group)
 ```
+
+## Diagnostics
+
+``` r
+nyc_airbnb %>% 
+  modelr::add_residuals(fit) %>% 
+  ggplot(aes(x = borough, y = resid)) +
+  geom_violin() +
+  ylim(-500, 1500)
+```
+
+    ## Warning: Removed 9993 rows containing non-finite values (stat_ydensity).
+
+<img src="linear_models_files/figure-gfm/unnamed-chunk-9-1.png" width="90%" />
+
+``` r
+nyc_airbnb %>% 
+  modelr::add_residuals(fit) %>% 
+  ggplot(aes(x = stars, y = resid)) + 
+  geom_point() +
+  facet_wrap(. ~ borough)
+```
+
+    ## Warning: Removed 9962 rows containing missing values (geom_point).
+
+<img src="linear_models_files/figure-gfm/unnamed-chunk-9-2.png" width="90%" />
+
+``` r
+nyc_airbnb %>% 
+  filter(
+    borough == "Queens",
+    price > 500
+  ) 
+```
+
+    ## # A tibble: 20 x 5
+    ##    price stars borough neighborhood     room_type      
+    ##    <dbl> <dbl> <fct>   <chr>            <fct>          
+    ##  1   850   3.5 Queens  Astoria          Entire home/apt
+    ##  2   585  NA   Queens  Astoria          Private room   
+    ##  3  1000  NA   Queens  Briarwood        Entire home/apt
+    ##  4  1100  NA   Queens  Briarwood        Private room   
+    ##  5   700   5   Queens  East Elmhurst    Private room   
+    ##  6  6050   5   Queens  East Elmhurst    Private room   
+    ##  7   750  NA   Queens  Jamaica Estates  Private room   
+    ##  8   895   5   Queens  Flushing         Entire home/apt
+    ##  9  1000  NA   Queens  Flushing         Private room   
+    ## 10   950   5   Queens  Flushing         Entire home/apt
+    ## 11   599  NA   Queens  Flushing         Entire home/apt
+    ## 12   550   5   Queens  Forest Hills     Entire home/apt
+    ## 13   599  NA   Queens  Glendale         Entire home/apt
+    ## 14   650   5   Queens  Long Island City Entire home/apt
+    ## 15   750  NA   Queens  Ridgewood        Entire home/apt
+    ## 16   600  NA   Queens  Rockaway Beach   Entire home/apt
+    ## 17   600  NA   Queens  St. Albans       Entire home/apt
+    ## 18   600  NA   Queens  Sunnyside        Entire home/apt
+    ## 19   540   5   Queens  Sunnyside        Entire home/apt
+    ## 20   580   5   Queens  Sunnyside        Entire home/apt
+
+## Hypothesis tests
+
+This does t-test by default
+
+``` r
+fit %>% 
+  broom::tidy()
+```
+
+    ## # A tibble: 5 x 5
+    ##   term            estimate std.error statistic   p.value
+    ##   <chr>              <dbl>     <dbl>     <dbl>     <dbl>
+    ## 1 (Intercept)         19.8     12.2       1.63 1.04e-  1
+    ## 2 stars               32.0      2.53     12.7  1.27e- 36
+    ## 3 boroughBrooklyn    -49.8      2.23    -22.3  6.32e-109
+    ## 4 boroughQueens      -77.0      3.73    -20.7  2.58e- 94
+    ## 5 boroughBronx       -90.3      8.57    -10.5  6.64e- 26
+
+What about the significance of `borough`
+
+``` r
+fit_null = lm(price ~ stars, data = nyc_airbnb)
+fit_alt = lm(price ~ stars + borough, data = nyc_airbnb)
+
+anova(fit_null, fit_alt) %>% 
+  broom::tidy()
+```
+
+    ## # A tibble: 2 x 6
+    ##   res.df         rss    df     sumsq statistic    p.value
+    ##    <dbl>       <dbl> <dbl>     <dbl>     <dbl>      <dbl>
+    ## 1  30528 1030861841.    NA       NA        NA  NA        
+    ## 2  30525 1005601724.     3 25260117.      256.  7.84e-164
